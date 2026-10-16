@@ -34,6 +34,22 @@ using .F04NumericalDifferentiation
 end
 
 @testset "F03-F04 自作テスト" begin
-    # TODO(自作): 別の関数、評価点、または入力条件を選び、どの実装ミスを検出するか説明できるテストを一つ書く。F03単独の別テストは作らない。
-    @test false
+    # 独立な手計算例：f(x)=x³, x=-2, h=0.5。
+    # f(-1.5)=-3.375, f(-2)=-8, f(-2.5)=-15.625 より期待値を求める。
+    # 符号、参照点、中心差分の分母2hの誤りを検出する。
+    # これらは二進数で正確に表せる値なので、丸めを許さず == で比較する。
+    cubic(x) = x^3
+    @test forward_difference(cubic, -2.0, 0.5) == 9.25
+    @test backward_difference(cubic, -2.0, 0.5) == 15.25
+    @test centered_difference(cubic, -2.0, 0.5) == 12.25
+end
+
+@testset "F04 標準条件の一次元収束" begin
+    f(x) = sin(x) * exp(x)
+    derivative(x) = exp(x) * (sin(x) + cos(x))
+    study = convergence_study(f, derivative, 0.4, [0.2, 0.1, 0.05, 0.025])
+    # 課題ページの全刻み区間の判定範囲をそのまま使用する。
+    @test all(r -> 1.7 <= r <= 2.3, study.forward_ratios)
+    @test all(r -> 1.7 <= r <= 2.3, study.backward_ratios)
+    @test all(r -> 3.7 <= r <= 4.3, study.centered_ratios)
 end
