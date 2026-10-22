@@ -166,11 +166,48 @@ end
 @testset "N07 自作: 開境界2条件の辺別熱収支" begin
     # TODO(自作): 複数ステップで辺別・移流/拡散別の積算、熱量変化、断熱壁を検証する。
     # 入力と独立期待値、許容値の根拠を記す。公式出力は上書きしない。
-    @test false
+    for wall in (:dirichlet,:insulated)
+        bc=N.channel_boundaries(wall); dx=.4;dy=.2;dt=.005
+        u=[.2+.05i+.03j^2 for i in 1:5,j in 1:4];v=similar(u)
+        initial=dx*dy*sum(u); adv=zeros(4);diff=zeros(4)
+        for _ in 1:60
+            # Independent positive-direction face formulas at each boundary.
+            expected_adv=[dy*size(u,2),-dy*sum(u[end,:]),0.,0.]
+            expected_diff=[dy*sum((2*0.05) .* (1 .-u[1,:])./dx),0.,
+                wall==:insulated ? 0. : -dx*sum((2*0.05) .* u[:,1]./dy),
+                wall==:insulated ? 0. : -dx*sum((2*0.05) .* u[:,end]./dy)]
+            step=N.thermal_step!(v,u,dt,dx,dy;cx=1.,cy=0.,kappa=.05,bc)
+            @test collect(step.boundary_rates.advective) ≈ expected_adv atol=1e-13
+            @test collect(step.boundary_rates.diffusive) ≈ expected_diff atol=1e-13
+            adv .+=dt.*expected_adv;diff .+=dt.*expected_diff
+            @test isapprox(dx*dy*sum(v)-initial,sum(adv)+sum(diff);atol=1e-12*max(1,abs(initial),sum(abs,adv)+sum(abs,diff)),rtol=0)
+            u,v=v,u
+        end
+        if wall==:insulated
+            @test diff[3:4]==[0.,0.]
+            @test adv[1]>0 && adv[2]<0
+        end
+    end
 end
 @testset "N07 自作: 温度とBurgersの解析解収束" begin
     # TODO(自作): 周期温度の拡散・合成と二成分Burgersを3格子で計算し、誤差と両区間の次数を検証する。
-    @test false
+    include("simulate.jl")
+    for id in ("periodic_advection","periodic_diffusion","periodic_combined","periodic_burgers")
+        errors=Float64[]
+        for (nx,ny) in OFFICIAL_GRIDS
+            c=N07Simulation.simulate_case(id,nx,ny)
+            if id=="periodic_burgers"
+                ue,ve=exact_burgers(c["x"],c["y"],1.)
+                push!(errors,sqrt((sum(abs2,c["u"][:,:,end]-ue)+sum(abs2,c["v"][:,:,end]-ve))/length(ue)))
+            else
+                exact=exact_temperature(c["x"],c["y"],1.,id)
+                push!(errors,sqrt(sum(abs2,c["temperature"][:,:,end]-exact)/length(exact)))
+            end
+        end
+        @test errors[1]>errors[2]>errors[3]>0
+        lo,hi=id=="periodic_diffusion" ? (1.8,2.2) : (.8,1.2)
+        @test all(lo .<= log2.(errors[1:2]./errors[2:3]) .<= hi)
+    end
 end
 @testset "N07 保存結果と来歴" begin
     @test check_complete()

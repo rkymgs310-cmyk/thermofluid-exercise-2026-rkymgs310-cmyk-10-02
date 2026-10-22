@@ -395,7 +395,7 @@ function thermal_stable_timestep(cx, cy, kappa, dx, dy, bc; safety = 0.8)
     thermal_parameters(cx, cy, kappa, dx, dy, bc; safety)
     require(thermal_rate(cx, cy, kappa, dx, dy, bc) > 0, "全係数0では刻みを決められません")
     # TODO(N07): 半セル境界を含む合成上限から時間刻みを求める。
-    dt = error("未実装 N07: thermal_stable_timestep")
+    dt = safety / thermal_rate(cx,cy,kappa,dx,dy,bc)
     checked_timestep(dt)
 end
 
@@ -434,7 +434,39 @@ function thermal_fluxes!(fluxes, T, dx, dy; cx, cy, kappa, bc)
     thermal_parameters(cx, cy, kappa, dx, dy, bc)
     validate_fluxes(fluxes, T)
     # TODO(N07): 正x・正y方向、移流と拡散を分けて全ての面へ書く。
-    error("未実装 N07: thermal_fluxes!")
+    nx,ny=size(T)
+    ax,dxflux,ay,dyflux=fluxes.adv_x,fluxes.diff_x,fluxes.adv_y,fluxes.diff_y
+    @inbounds for j in 1:ny, i in 2:nx
+        left,right=T[i-1,j],T[i,j]
+        ax[i,j]=cx*(cx>=0 ? left : right)
+        dxflux[i,j]=-kappa*(right-left)/dx
+    end
+    @inbounds for j in 2:ny, i in 1:nx
+        lower,upper=T[i,j-1],T[i,j]
+        ay[i,j]=cy*(cy>=0 ? lower : upper)
+        dyflux[i,j]=-kappa*(upper-lower)/dy
+    end
+    @inbounds for j in 1:ny
+        if bc.west.kind==:periodic
+            adv=cx*(cx>=0 ? T[nx,j] : T[1,j]); diff=-kappa*(T[1,j]-T[nx,j])/dx
+            ax[1,j]=ax[nx+1,j]=adv; dxflux[1,j]=dxflux[nx+1,j]=diff
+        else
+            ax[1,j]=bc.west.kind==:inflow ? cx*bc.west.value : 0.
+            ax[nx+1,j]=bc.east.kind==:outflow ? cx*T[nx,j] : 0.
+            dxflux[1,j]=bc.west.kind in (:dirichlet,:inflow) ? 2kappa*(bc.west.value-T[1,j])/dx : 0.
+            dxflux[nx+1,j]=bc.east.kind==:dirichlet ? 2kappa*(T[nx,j]-bc.east.value)/dx : 0.
+        end
+    end
+    @inbounds for i in 1:nx
+        if bc.south.kind==:periodic
+            adv=cy*(cy>=0 ? T[i,ny] : T[i,1]); diff=-kappa*(T[i,1]-T[i,ny])/dy
+            ay[i,1]=ay[i,ny+1]=adv; dyflux[i,1]=dyflux[i,ny+1]=diff
+        else
+            ay[i,1]=ay[i,ny+1]=0.
+            dyflux[i,1]=bc.south.kind==:dirichlet ? 2kappa*(bc.south.value-T[i,1])/dy : 0.
+            dyflux[i,ny+1]=bc.north.kind==:dirichlet ? 2kappa*(T[i,ny]-bc.north.value)/dy : 0.
+        end
+    end
     fluxes
 end
 
@@ -474,7 +506,17 @@ function thermal_step!(Tnew, Told, dt, dx, dy; cx, cy, kappa, bc)
     rate = thermal_rate(cx, cy, kappa, dx, dy, bc)
     require(dt * rate <= 1 + 32eps(Float64), "温度の安定上限を超えています")
     # TODO(N07): Common.validate_buffersも再利用し、同じ旧場の面流束を一度構築して更新と辺別レートに使う。
-    error("未実装 N07: thermal_step!")
+    Common.validate_buffers(Tnew,Told)
+    f=flux_buffers(Told)
+    thermal_fluxes!(f,Told,dx,dy;cx,cy,kappa,bc)
+    nx,ny=size(Told)
+    @inbounds for j in 1:ny,i in 1:nx
+        Tnew[i,j]=Told[i,j]-dt/dx*(f.adv_x[i+1,j]-f.adv_x[i,j]+f.diff_x[i+1,j]-f.diff_x[i,j])-dt/dy*(f.adv_y[i,j+1]-f.adv_y[i,j]+f.diff_y[i,j+1]-f.diff_y[i,j])
+    end
+    function inward(x,y)
+        (;west=dy*sum(@view x[1,:]),east=-dy*sum(@view x[end,:]),south=dx*sum(@view y[:,1]),north=-dx*sum(@view y[:,end]))
+    end
+    (;temperature=Tnew,boundary_rates=(;advective=inward(f.adv_x,f.adv_y),diffusive=inward(f.diff_x,f.diff_y)))
 end
 
 """
@@ -566,7 +608,7 @@ function burgers_stable_timestep(u, v, nu, dx, dy; safety = 0.8)
     burgers_parameters(u, v, nu, dx, dy; safety)
     require(burgers_rate(u, v, nu, dx, dy) > 0, "全速度・粘性0では刻みを決められません")
     # TODO(N07): このステップの旧場の局所速度から合成刻みを決める。
-    dt = error("未実装 N07: burgers_stable_timestep")
+    dt = safety / burgers_rate(u,v,nu,dx,dy)
     checked_timestep(dt)
 end
 
@@ -610,7 +652,19 @@ function burgers_step!(unew, vnew, uold, vold, dt, dx, dy; nu)
         "Burgersの安定上限を超えています",
     )
     # TODO(N07): Common.validate_buffersと周期添字を再利用し、正負風上と拡散で二成分を同じ旧場から更新する。
-    error("未実装 N07: burgers_step!")
+    Common.validate_buffers(unew,uold); Common.validate_buffers(vnew,vold)
+    nx,ny=size(uold)
+    @inbounds for j in 1:ny,i in 1:nx
+        im=Common.periodic_left_index(i,nx); ip=Common.periodic_right_index(i,nx)
+        jm=Common.periodic_left_index(j,ny); jp=Common.periodic_right_index(j,ny)
+        a,b=uold[i,j],vold[i,j]
+        for (new,old) in ((unew,uold),(vnew,vold))
+            gx=a>=0 ? (old[i,j]-old[im,j])/dx : (old[ip,j]-old[i,j])/dx
+            gy=b>=0 ? (old[i,j]-old[i,jm])/dy : (old[i,jp]-old[i,j])/dy
+            lap=(old[ip,j]-2old[i,j]+old[im,j])/dx^2+(old[i,jp]-2old[i,j]+old[i,jm])/dy^2
+            new[i,j]=old[i,j]-dt*(a*gx+b*gy)+nu*dt*lap
+        end
+    end
     (; u = unew, v = vnew)
 end
 end
