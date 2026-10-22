@@ -28,7 +28,7 @@ N02授業の保存形Burgers流束を、配列全体ではなく1点のスカラ
 function burgers_flux(u::Real)
     isfinite(u) || throw(ArgumentError("流束の入力を有限値にしてください"))
     # TODO(N02): 保存形Burgers方程式の流束を返す。
-    error("未実装 N02: burgers_flux")
+    u^2 / 2
 end
 
 """
@@ -56,7 +56,7 @@ function periodic_left_index(i::Integer, n::Integer)
     (i isa Bool || n isa Bool || n < 1 || !(1 <= i <= n)) &&
         throw(ArgumentError("添字は1 <= i <= n、点数はn >= 1の整数です（Bool不可）"))
     # TODO(N02): 先頭の左隣が末尾になるようにする。
-    error("未実装 N02: periodic_left_index")
+    i == 1 ? n : i - 1
 end
 
 """
@@ -92,7 +92,7 @@ function nonlinear_upwind_step!(u_new, u_old, dt::Real, dx::Real; boundary = :fi
     for i in indices
         left = boundary == :periodic ? periodic_left_index(i, length(u_old)) : i - 1
         # TODO(N02): 古い値の流束の差で更新する。u_oldは変更しない。
-        error("未実装 N02: nonlinear_upwind_step!")
+        u_new[i] = u_old[i] - (dt / dx) * (burgers_flux(u_old[i]) - burgers_flux(u_old[left]))
     end
     all(isfinite, u_new) || error("更新後に非有限値があります。更新式を確認してください")
     return u_new
