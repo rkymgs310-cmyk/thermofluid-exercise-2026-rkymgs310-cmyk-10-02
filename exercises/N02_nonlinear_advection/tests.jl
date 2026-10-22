@@ -48,8 +48,21 @@ using .N02NonlinearAdvection
     end
 end
 @testset "N02 自作テスト" begin
-    # TODO(自作): 周期の非定数・非負配列を複数ステップ進め、離散総和保存を確認する。入力・許容誤差・期待値を自分で決める。
-    @test false
-    # TODO(自作): 周期1ステップSについてS(circshift(u,k)) ≈ circshift(S(u),k)を確認する。非対称な非定数配列、k≠0、同じdtとdxを使う。
-    @test false
+    @testset "非対称場の40ステップ総和保存" begin
+        u = [0.25, 1.5, 0.75, 2.0, 0.5, 1.0, 0.125]
+        initial = sum(u); v = similar(u)
+        for _ in 1:40
+            nonlinear_upwind_step!(v, u, 0.025, 0.25; boundary=:periodic)
+            @test isapprox(sum(v), initial; rtol=0, atol=1e-12*max(1,abs(initial)))
+            u,v=v,u
+        end
+    end
+    @testset "周期更新と循環移動の可換性" begin
+        u=[0.25,1.5,0.75,2.,0.5,1.,0.125]; saved=copy(u)
+        a=similar(u); b=similar(u)
+        nonlinear_upwind_step!(a,u,0.025,0.25;boundary=:periodic)
+        nonlinear_upwind_step!(b,circshift(u,3),0.025,0.25;boundary=:periodic)
+        @test b ≈ circshift(a,3) atol=32eps() rtol=0
+        @test u == saved
+    end
 end
