@@ -36,11 +36,26 @@ end
 end
 @testset "N06 自作: 複数ステップの保存量" begin
     # TODO: 非対称・非定数場を複数ステップ進め、保存量を確認する。
-    @test false
+    N=ThermofluidExercise.N06
+    u=[0.3i+0.07j^2 for i in 1:5,j in 1:7];v=similar(u);dx=.4;dy=1/7
+    initial=dx*dy*sum(u)
+    for _ in 1:80
+        N.advection_step!(v,u,.02,dx,dy;cx=.6,cy=.2)
+        @test isapprox(dx*dy*sum(v),initial;atol=1e-12*max(1,abs(initial)),rtol=0)
+        u,v=v,u
+    end
 end
 @testset "N06 自作: 3格子の解析解誤差と収束" begin
     # TODO: 公式3格子で誤差が減少し、両区間が約1次収束することを確認する。
-    @test false
+    include("simulate.jl")
+    errors=Float64[]
+    for (nx,ny) in ((40,30),(80,60),(160,120))
+        c=N06Simulation.simulate_case(nx,ny)
+        exact=N06Simulation.exact_field(c["x"],c["y"],1.)
+        push!(errors,sqrt(sum(abs2,c["u"][:,:,end]-exact)/length(exact)))
+    end
+    @test errors[1]>errors[2]>errors[3]>0
+    @test all(0.8 .<= log2.(errors[1:2]./errors[2:3]) .<= 1.2)
 end
 module N0506OutputChecks
 include("provided_support.jl")

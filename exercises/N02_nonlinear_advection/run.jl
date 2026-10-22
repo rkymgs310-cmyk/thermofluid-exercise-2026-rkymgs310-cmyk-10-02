@@ -2,6 +2,7 @@
 # 読む順: 流束 → 添字 → 1ステップ → 境界 → simulate → main。
 module N02NonlinearAdvection
 include("provided_support.jl")
+import ThermofluidExercise
 export burgers_flux,
     periodic_left_index, nonlinear_upwind_step!, apply_boundary!, simulate, main
 
@@ -85,17 +86,7 @@ end
 新旧は同じ記憶領域を共有せず、全点で更新前の値を読む。N02授業の保存形更新を参照する。配布状態では更新範囲内の未実装エラーで停止する。
 """
 function nonlinear_upwind_step!(u_new, u_old, dt::Real, dx::Real; boundary = :fixed)
-    # 計算や書込みの前に、入力条件をまとめて確認する。
-    validate_step_inputs(u_new, u_old, dt, dx, boundary)
-    copyto!(u_new, u_old)
-    indices = boundary == :periodic ? (1:length(u_old)) : (2:(length(u_old) - 1))
-    for i in indices
-        left = boundary == :periodic ? periodic_left_index(i, length(u_old)) : i - 1
-        # TODO(N02): 古い値の流束の差で更新する。u_oldは変更しない。
-        u_new[i] = u_old[i] - (dt / dx) * (burgers_flux(u_old[i]) - burgers_flux(u_old[left]))
-    end
-    all(isfinite, u_new) || error("更新後に非有限値があります。更新式を確認してください")
-    return u_new
+    ThermofluidExercise.N02.nonlinear_upwind_step!(u_new,u_old,dt,dx;boundary)
 end
 
 """
@@ -115,14 +106,7 @@ end
 入力 `u`。固定の場合は左端を1、右端を左隣の値に書き換える。
 """
 function apply_boundary!(u; boundary = :fixed)
-    # 計算や書込みの前に、入力条件をまとめて確認する。
-    validate_boundary(boundary)
-    length(u) >= 3 || throw(ArgumentError("境界配列には3点以上が必要です"))
-    if boundary == :fixed
-        u[1] = 1.0
-        u[end] = u[end - 1]
-    end
-    return u
+    ThermofluidExercise.N02.apply_boundary!(u;boundary)
 end
 
 """
