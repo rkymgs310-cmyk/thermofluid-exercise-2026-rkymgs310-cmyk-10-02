@@ -1,3 +1,6 @@
 .worktrees/
 scratch/*
 !scratch/.gitkeep
+
+# Local validation logs and isolated checkpoint archive
+verification/
