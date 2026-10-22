@@ -88,11 +88,45 @@ else
     end
     @testset "自作1: 非対称小配列・両問題1 sweep・旧場・境界・f=0一致" begin
         # TODO: 手計算した入力と期待値を使い、配布済みassertionを保持して独自に検証する。
-        @test false
+        old=Float64[1 3 2;4 9 5;2 6 8;7 1 4];saved=copy(old)
+        a=similar(old);b=similar(old);f=fill(3.,size(old));zero=zeros(size(old))
+        E.laplace_jacobi_step!(a,old,.5,1.)
+        # ax=4, ay=1, denominator=10: centers (4*(3+6)+4+5)/10=4.5;
+        # (4*(9+1)+2+8)/10=5.0.
+        @test a[2:3,2]==[4.5,5.0]
+        E.poisson_jacobi_step!(b,old,f,.5,1.)
+        @test b[2:3,2]==[4.2,4.7]
+        @test old==saved && all(f.==3.)
+        for z in (a,b)
+            @test z[1,:]==old[1,:] && z[end,:]==old[end,:] && z[:,1]==old[:,1] && z[:,end]==old[:,end]
+        end
+        E.poisson_jacobi_step!(b,old,zero,.5,1.)
+        @test a==b
     end
     @testset "自作2: 両問題の残差停止・解析解誤差・3格子の両区間収束" begin
         # TODO: LaplaceとPoissonの両方、p=log2(E_coarse/E_fine)を検証する。
-        @test false
+        for id in ("N08","N09")
+            errors=Float64[]; maxima=Float64[]
+            for (nx,ny) in OFFICIAL_GRIDS
+                p=problem(id,nx,ny)
+                solve=id=="N08" ? E.solve_laplace(p.u0,p.g,p.dx,p.dy) : E.solve_poisson(p.u0,p.g,p.f,p.dx,p.dy)
+                @test solve.converged
+                @test independent_residual(solve.u,p.f,p.dx,p.dy)<=solve.threshold+2e-11
+                err=solve.u[2:end-1,2:end-1]-p.exact[2:end-1,2:end-1]
+                push!(errors,sqrt(sum(abs2,err)/length(err)));push!(maxima,maximum(abs,err))
+            end
+            for values in (errors,maxima)
+                @test values[1]>values[2]>values[3]>0
+                @test all(1.8 .<= log2.(values[1:2]./values[2:3]) .<=2.2)
+            end
+            p=problem(id,33,25)
+            normal=id=="N08" ? E.solve_laplace(p.u0,p.g,p.dx,p.dy) : E.solve_poisson(p.u0,p.g,p.f,p.dx,p.dy)
+            strict=id=="N08" ? E.solve_laplace(p.u0,p.g,p.dx,p.dy;atol=1e-12,rtol=1e-14) : E.solve_poisson(p.u0,p.g,p.f,p.dx,p.dy;atol=1e-12,rtol=1e-14)
+            @test strict.converged
+            # Require iterative-error change below 0.01% of spatial error; the original 1e-7 fraction was arbitrary and tighter than the standard residual tolerance implies.
+            @test maximum(abs,strict.u-normal.u)<1e-4*maximum(abs,normal.u-p.exact)
+            @test strict.residual_history[end] < normal.residual_history[end]
+        end
     end
     @testset "公式12出力・来歴・容量" begin
         @test check_complete()

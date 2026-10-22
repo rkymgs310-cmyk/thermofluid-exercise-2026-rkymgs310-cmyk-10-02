@@ -149,7 +149,8 @@ function apply_dirichlet!(u, g)
     buffers(u, g)
     # STUDENT_BEGIN apply_dirichlet!
     # TODO(N08): 指定された境界値を各辺へ書き込む。
-    error("未実装 N08: apply_dirichlet!")
+    u[1,:] .= g[1,:]; u[end,:] .= g[end,:]
+    u[:,1] .= g[:,1]; u[:,end] .= g[:,end]
     # STUDENT_END apply_dirichlet!
     u
 end
@@ -185,7 +186,10 @@ function laplace_jacobi_step!(u_new, u_old, dx, dy)
     ax, ay, d = coefficients(dx, dy)
     # STUDENT_BEGIN laplace_jacobi_step!
     # TODO(N08): 旧配列からLaplace方程式のJacobi更新を計算する。
-    error("未実装 N08: laplace_jacobi_step!")
+    copyto!(u_new,u_old)
+    @inbounds for j in 2:size(u_old,2)-1, i in 2:size(u_old,1)-1
+        u_new[i,j]=(ax*(u_old[i-1,j]+u_old[i+1,j])+ay*(u_old[i,j-1]+u_old[i,j+1]))/d
+    end
     # STUDENT_END laplace_jacobi_step!
     u_new
 end
@@ -219,7 +223,10 @@ function laplace_residual!(r, u, dx, dy)
     ax, ay, d = coefficients(dx, dy)
     # STUDENT_BEGIN laplace_residual!
     # TODO(N08): 離散Laplace方程式の残差を内部点へ書き込む。
-    error("未実装 N08: laplace_residual!")
+    fill!(r,0.)
+    @inbounds for j in 2:size(u,2)-1, i in 2:size(u,1)-1
+        r[i,j]=-(ax*(u[i-1,j]+u[i+1,j])+ay*(u[i,j-1]+u[i,j+1])-d*u[i,j])
+    end
     # STUDENT_END laplace_residual!
     r
 end
@@ -260,7 +267,7 @@ function residual_converged(r_norm, r_initial; atol = 1e-10, rtol = 1e-12)
     require(isfinite(threshold), "停止閾値が表現範囲外です")
     # STUDENT_BEGIN residual_converged
     # TODO(N08): 残差ノルムと停止閾値を比較してBoolを返す。
-    error("未実装 N08: residual_converged")
+    r_norm <= threshold
     # STUDENT_END residual_converged
 end
 
@@ -296,7 +303,10 @@ function poisson_jacobi_step!(u_new, u_old, f, dx, dy)
     ax, ay, d = coefficients(dx, dy)
     # STUDENT_BEGIN poisson_jacobi_step!
     # TODO(N09): 右辺を含むPoisson方程式のJacobi更新を計算する。
-    error("未実装 N09: poisson_jacobi_step!")
+    copyto!(u_new,u_old)
+    @inbounds for j in 2:size(u_old,2)-1, i in 2:size(u_old,1)-1
+        u_new[i,j]=(ax*(u_old[i-1,j]+u_old[i+1,j])+ay*(u_old[i,j-1]+u_old[i,j+1])-f[i,j])/d
+    end
     # STUDENT_END poisson_jacobi_step!
     u_new
 end
@@ -331,7 +341,10 @@ function poisson_residual!(r, u, f, dx, dy)
     ax, ay, d = coefficients(dx, dy)
     # STUDENT_BEGIN poisson_residual!
     # TODO(N09): 右辺を含む離散Poisson方程式の残差を内部点へ書き込む。
-    error("未実装 N09: poisson_residual!")
+    fill!(r,0.)
+    @inbounds for j in 2:size(u,2)-1, i in 2:size(u,1)-1
+        r[i,j]=f[i,j]-(ax*(u[i-1,j]+u[i+1,j])+ay*(u[i,j-1]+u[i,j+1])-d*u[i,j])
+    end
     # STUDENT_END poisson_residual!
     r
 end

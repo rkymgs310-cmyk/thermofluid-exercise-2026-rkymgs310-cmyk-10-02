@@ -137,7 +137,9 @@ pure(bc) = all(side->bc[side].kind == :neumann, SIDES)
 function weights(nx, ny, dx, dy)
     # TODO_BEGIN weights
     # TODO(N08-N09): 節点の半セル重みを返す。
-    error("未実装 N08-N09: NeumannExtension.weights (発展)")
+    w=fill(Float64(dx*dy),nx,ny)
+    w[1,:] .*= .5; w[end,:] .*= .5; w[:,1] .*= .5; w[:,end] .*= .5
+    w
     # TODO_END weights
 end
 
@@ -164,7 +166,13 @@ weightsの半セル重みで平均を求め、全節点のuから同じ平均を
 function mean_zero!(u, dx, dy)
     # TODO_BEGIN mean_zero
     # TODO(N08-N09): 重み付き平均がゼロになるように場を調整する。
-    error("未実装 N08-N09: NeumannExtension.mean_zero! (発展)")
+    nx,ny=size(u); total=0.; area=0.
+    @inbounds for j in 1:ny,i in 1:nx
+        w=(i==1 || i==nx ? .5 : 1.)*(j==1 || j==ny ? .5 : 1.)
+        total+=w*u[i,j]; area+=w
+    end
+    u .-= total/area
+    u
     # TODO_END mean_zero
 end
 
@@ -195,7 +203,17 @@ end
 function compatibility(f, dx, dy, bc)
     # TODO_BEGIN compatibility
     # TODO(N08-N09): 右辺と外向き境界流束の適合条件を検証する。
-    error("未実装 N08-N09: NeumannExtension.compatibility (発展)")
+    nx,ny=size(f); w=weights(nx,ny,dx,dy)
+    left=sum(w .* f); right=0.; edge_abs=0.
+    for (side,h,n) in ((:west,dy,ny),(:east,dy,ny),(:south,dx,nx),(:north,dx,nx))
+        for k in 1:n
+            value=h*(k==1 || k==n ? .5 : 1.)*bc[side].values[k]
+            right+=value; edge_abs+=abs(value)
+        end
+    end
+    difference=left-right
+    require(abs(difference)<=1e-12*max(1,sum(abs,w.*f),edge_abs),"incompatible pure Neumann data")
+    difference
     # TODO_END compatibility
 end
 
@@ -251,7 +269,12 @@ uとbcを保持する。固定節点の判定には提供のfixed_valueを使い
 function neighbors(u, i, j, dx, dy, bc)
     # TODO_BEGIN neighbors
     # TODO(N08-N09): 境界条件に応じた隣接値・ゴースト値を返す。
-    error("未実装 N08-N09: NeumannExtension.neighbors (発展)")
+    nx,ny=size(u)
+    west=i==1 ? u[2,j]+2dx*bc.west.values[j] : u[i-1,j]
+    east=i==nx ? u[nx-1,j]+2dx*bc.east.values[j] : u[i+1,j]
+    south=j==1 ? u[i,2]+2dy*bc.south.values[i] : u[i,j-1]
+    north=j==ny ? u[i,ny-1]+2dy*bc.north.values[i] : u[i,j+1]
+    (west,east,south,north)
     # TODO_END neighbors
 end
 
@@ -290,7 +313,18 @@ function neumann_jacobi_step!(new, old, f, dx, dy, bc; omega = 2 / 3)
     require(omega isa Real && isfinite(omega) && 0 < omega < 1, "omegaは0<omega<1です")
     # TODO_BEGIN weighted_update
     # TODO(N08-N09): 同じ旧場から重み付きJacobi更新を計算する。
-    error("未実装 N08-N09: NeumannExtension.neumann_jacobi_step! (発展)")
+    nx,ny=size(old)
+    @inbounds for j in 1:ny,i in 1:nx
+        value=fixed_value(i,j,nx,ny,bc)
+        if isnothing(value)
+            w,e,s,n=neighbors(old,i,j,dx,dy,bc)
+            candidate=(ax*(w+e)+ay*(s+n)-f[i,j])/d
+            new[i,j]=(1-omega)*old[i,j]+omega*candidate
+        else
+            new[i,j]=value
+        end
+    end
+    pure(bc) && mean_zero!(new,dx,dy)
     # TODO_END weighted_update
     new
 end
@@ -325,7 +359,15 @@ function neumann_residual!(r, u, f, dx, dy, bc)
     ax, ay, d = validate(r, u, f, dx, dy, bc)
     # TODO_BEGIN residual
     # TODO(N08-N09): Neumann境界を含む離散残差を求める。
-    error("未実装 N08-N09: NeumannExtension.neumann_residual! (発展)")
+    nx,ny=size(u)
+    @inbounds for j in 1:ny,i in 1:nx
+        if isnothing(fixed_value(i,j,nx,ny,bc))
+            w,e,s,n=neighbors(u,i,j,dx,dy,bc)
+            r[i,j]=f[i,j]-(ax*(w+e)+ay*(s+n)-d*u[i,j])
+        else
+            r[i,j]=0.
+        end
+    end
     # TODO_END residual
     r
 end

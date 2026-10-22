@@ -1,0 +1,97 @@
+atol = 1.0e-10
+boundary = "dirichlet"
+code_sha256 = """\"exercises/N08-N09_laplace_poisson/provided_support.jl\" = \"036b91f2c4246c06244cd3ebd69a5f7a496545db0aa3a4c565182538146de0e7\"\n\"exercises/N08-N09_laplace_poisson/simulate.jl\" = \"172b8987ee29252fae76767bb9d829ebd1f0dca4109f74a01096420b8b3e5eec\"\n\"extensions/extension_support.jl\" = \"75953db4717ce86c1d70a7caaea24e4177f18dbe099dac8c6cca28328fd03594\"\n\"extensions/relaxation.jl\" = \"d18049e05a1935cdddd1ba87c2c3718405c568e511174eea8771166464f0f654\"\n\"extensions/run_relaxation.jl\" = \"c71ef238ce9dfc486a062b3e9be7360c86217ce6062aa8179ad27eba7801132a\"\n\"src/N08N09Elliptic.jl\" = \"140dffb52d4f7cc932a661e6485c355933630ecc547b0ebea71d85e5f04d5de8\"\n"""
+diagnostics_complete = true
+domain = [0.0, 2.0, 0.0, 1.0]
+equation = "poisson_2d"
+extension_id = "relaxation"
+git_head = "da4f34aa854e4fff40e0da2b2d1f0d1b02ca093d"
+grid_location = "node"
+maxiter = 200000
+method = "per_case"
+rtol = 1.0e-12
+run_id = "86920b021b63a0a1a71be40398f21e5d"
+schema_version = 1
+source_fields_sha256 = "2d143da3cbbdb31192e82179909d7e55ec0bd2d77833108b49f6e3a4f912920c"
+task_id = "N09"
+units = "1"
+
+[cases.gauss_seidel_n017x013]
+elapsed_seconds = 0.006056955
+independent_residual = 6.183871192888546e-10
+iterations = 424
+l2_error = 0.0030742649345365685
+linf_error = 0.0056776956763520126
+reason = "converged"
+
+[cases.gauss_seidel_n033x025]
+elapsed_seconds = 0.134353499
+independent_residual = 2.517195341056322e-9
+iterations = 1609
+l2_error = 0.0007380213771118468
+linf_error = 0.0014166533124053693
+reason = "converged"
+
+[cases.gauss_seidel_n065x049]
+elapsed_seconds = 1.745198996
+independent_residual = 1.0026489860592847e-8
+iterations = 6068
+l2_error = 0.00018098967640380344
+linf_error = 0.0003539898747213499
+reason = "converged"
+
+[cases.jacobi_n017x013]
+elapsed_seconds = 0.021645525
+independent_residual = 6.255227447127254e-10
+iterations = 843
+l2_error = 0.0030742649327805288
+linf_error = 0.005677695672865468
+reason = "converged"
+
+[cases.jacobi_n033x025]
+elapsed_seconds = 0.194500786
+independent_residual = 2.5231194911157218e-9
+iterations = 3211
+l2_error = 0.0007380213754065983
+linf_error = 0.0014166533089223776
+reason = "converged"
+
+[cases.jacobi_n065x049]
+elapsed_seconds = 3.250245015
+independent_residual = 1.0031365960117e-8
+iterations = 12125
+l2_error = 0.00018098967468650087
+linf_error = 0.00035398987124724
+reason = "converged"
+
+[cases.sor_n017x013]
+elapsed_seconds = 0.001709482
+independent_residual = 6.002345287470234e-10
+iterations = 126
+l2_error = 0.0030742649447049694
+linf_error = 0.005677695696904017
+reason = "converged"
+
+[cases.sor_n033x025]
+elapsed_seconds = 0.032531866
+independent_residual = 2.487579919829841e-9
+iterations = 525
+l2_error = 0.0007380213876505895
+linf_error = 0.001416653334755047
+reason = "converged"
+
+[cases.sor_n065x049]
+elapsed_seconds = 0.540888842
+independent_residual = 9.997309646792019e-9
+iterations = 2014
+l2_error = 0.00018098968684979885
+linf_error = 0.000353989897172724
+reason = "converged"
+
+[orders]
+gauss_seidel_l2 = [2.0585069889134604, 2.027755196415327]
+gauss_seidel_linf = [2.002818782047596, 2.0007067406746093]
+jacobi_l2 = [2.0585069914228287, 2.027755206770751]
+jacobi_linf = [2.002818784708688, 2.0007067512864176]
+sor_l2 = [2.058506973084012, 2.0277551337500697]
+sor_linf = [2.0028187645093114, 2.0007066719339686]

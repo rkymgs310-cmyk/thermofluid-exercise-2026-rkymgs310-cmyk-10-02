@@ -1,0 +1,32 @@
+axis_order = "y,x"
+display_grid = "n033x025"
+extension_id = "relaxation"
+log_floor = 1.0e-16
+run_id = "86920b021b63a0a1a71be40398f21e5d"
+schema_version = 1
+source_fields_sha256 = "2d143da3cbbdb31192e82179909d7e55ec0bd2d77833108b49f6e3a4f912920c"
+source_summary_sha256 = "3722cd0b28bb28acd32e9d91a8132daa2e1d7c4eda1d13533b3f5324a66d2ce6"
+task_id = "N09"
+
+[gauss_seidel]
+error_color_range = [-0.0014166533124053693, 0.0014166533124053693]
+error_display_color_range = [-1.4166533124053693, 1.4166533124053693]
+error_display_scale = 0.001
+field_color_range = [1.0, 3.6335937230777735]
+
+[jacobi]
+error_color_range = [-0.0014166533089223776, 0.0014166533089223776]
+error_display_color_range = [-1.4166533089223776, 1.4166533089223776]
+error_display_scale = 0.001
+field_color_range = [1.0, 3.633593723067283]
+
+[png_sha256]
+"convergence.png" = "611179137ccc7507e9b60d3a113d11f8cf4bfd1682a89601856d4b08d338f6c4"
+"fields.png" = "3d1ef08642fd4ad79e7d9ecc99d47cbe75e4b7b68355ba7fd8a5737c45499cbe"
+"residual.png" = "8522af6a4044c76877413a061640024cbfc893f4e9d0ea4bf7a1e8fc72d05d23"
+
+[sor]
+error_color_range = [-0.001416653334755047, 0.001416653334755047]
+error_display_color_range = [-1.416653334755047, 1.416653334755047]
+error_display_scale = 0.001
+field_color_range = [1.0, 3.633593723106113]

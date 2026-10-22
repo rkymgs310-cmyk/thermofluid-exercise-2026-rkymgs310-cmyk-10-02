@@ -1,0 +1,44 @@
+axis_order = "y,x"
+display_grid = "n033x025"
+extension_id = "neumann"
+log_floor = 1.0e-16
+run_id = "91d4d2ae21d8d665401edbed0aa0e1bf"
+schema_version = 1
+source_fields_sha256 = "78e0ad049b19c8ad52d04830b9589f3de555a60ebcbadab1f72200b880cca27d"
+source_summary_sha256 = "9d8d074be05a423b8ba0c6f0de9d2103c51b946256228301091c360c1037abd2"
+task_id = "N09"
+
+[mixed_laplace_flux]
+error_color_range = [-0.0003958514741153607, 0.0003958514741153607]
+error_display_color_range = [-3.958514741153607, 3.958514741153607]
+error_display_scale = 0.0001
+field_color_range = [1.0, 3.550690335732209]
+
+[mixed_poisson_flux]
+error_color_range = [-0.00487086935738823, 0.00487086935738823]
+error_display_color_range = [-4.87086935738823, 4.87086935738823]
+error_display_scale = 0.001
+field_color_range = [1.0, 3.6325848468210085]
+
+[mixed_poisson_zero_flux]
+error_color_range = [-4.1438141806793283e-10, 4.1438141806793283e-10]
+error_display_color_range = [-4.143814180679328, 4.143814180679328]
+error_display_scale = 1.0e-10
+field_color_range = [0.0, 4.0]
+
+[png_sha256]
+"convergence.png" = "038420034f94d65dd9e1a0699e34a4600ce64363d3f63ca2ef0b4f4135774f74"
+"fields.png" = "2c4ae5c04b7d03238c2b897c6d7c19464a1077474821cfa8d2dacc8efe37995c"
+"residual.png" = "cf9b5763799abfa011d021f369ce2dc978c46bf7788824811cf1d31a4cbdbacc"
+
+[pure_poisson_flux]
+error_color_range = [-1.265934024274884e-10, 1.265934024274884e-10]
+error_display_color_range = [-1.265934024274884, 1.265934024274884]
+error_display_scale = 1.0e-10
+field_color_range = [-2.0012297453703694, 3.9987702546296306]
+
+[pure_poisson_zero_flux]
+error_color_range = [-0.0060845660544026625, 0.0060845660544026625]
+error_display_color_range = [-6.0845660544026625, 6.0845660544026625]
+error_display_scale = 0.001
+field_color_range = [-1.5060845660544016, 1.5060845660544027]

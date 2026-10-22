@@ -37,7 +37,10 @@ function sor_step!(u, f, dx, dy; omega = 1.5)
     E.require(omega isa Real && isfinite(omega) && 0 < omega < 2, "omegaは0<omega<2です")
     # TODO_BEGIN sor
     # TODO(N08-N09): 逐次更新と緩和係数を用いてSORの1ステップを実装する。
-    error("未実装 N08-N09: RelaxationExtension.sor_step! (発展)")
+    @inbounds for j in 2:size(u,2)-1,i in 2:size(u,1)-1
+        candidate=(ax*(u[i-1,j]+u[i+1,j])+ay*(u[i,j-1]+u[i,j+1])-f[i,j])/d
+        u[i,j]=(1-omega)*u[i,j]+omega*candidate
+    end
     # TODO_END sor
     u
 end
