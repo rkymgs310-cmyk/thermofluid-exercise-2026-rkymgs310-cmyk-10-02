@@ -59,11 +59,21 @@ import .N03Diffusion
 end
 
 @testset "N03 自作テスト" begin
-    # TODO(自作): 非対称な非定数配列を複数ステップ進め、断熱の台形則熱量保存を確認する。
-    # 初期熱量を独立に計算し、点数・ステップ数・値の大きさから許容誤差を決める。
-    @test false
-
-    # TODO(自作): 固定温度の正弦解析解と41・81・161点の数値解を同時刻・同じfoで比較する。
-    # 誤差の減少と観測次数を確認し、指標・許容範囲・検出限界を説明する。
-    @test false
+    u=[0.2,0.9,0.1,0.7,0.4,0.05]; v=similar(u); dx=.3
+    initial=dx*(u[1]/2+sum(u[2:end-1])+u[end]/2)
+    for _ in 1:100
+        N03Diffusion.diffusion_step!(v,u,.18,dx,.1;boundary=:insulated)
+        @test isapprox(dx*(v[1]/2+sum(v[2:end-1])+v[end]/2),initial;atol=1e-12*max(1,abs(initial)),rtol=0)
+        u,v=v,u
+    end
+    for boundary in (:fixed,:insulated)
+        errors=Float64[]
+        for nx in (41,81,161)
+            r=N03Diffusion.simulate(;boundary,nx,initial=:mode,fo=.4,t_final=1.)
+            exact=N03Diffusion.analytic_solution(r.x,1.;boundary)
+            push!(errors,maximum(abs.(r.u-exact)))
+        end
+        @test errors[1]>errors[2]>errors[3]>0
+        @test all(1.8 .<= log2.(errors[1:2]./errors[2:3]) .<= 2.2)
+    end
 end
